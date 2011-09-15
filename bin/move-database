@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby1.9.1
+
+require 'trollop'
+require 'yaml'
+
+SUB_COMMANDS = %w(projects move)
+global_opts = Trollop::options do
+  banner <<-EOS
+ 
+
+Usage
+-----
+
+    database-move init
+    database-move projects 
+
+    database-move move <project> 
+
+where [options] are:
+EOS
+  opt :dry_run, "Don't actually do anything", :short => "-n"
+  opt :verbose, "Increase verbosity", :short => "-v"
+  stop_on SUB_COMMANDS
+end
+
+cmd = ARGV.shift
+dot = File.expand_path("~/.asee_dbs.yml")
+skl = File.join(File.dirname(File.dirname(__FILE__)), 'config', 'asee_dbs.example.yml')
+
+if File.exists?(dot)
+  cnf = YAML.load(File.open(dot))
+end
+
+
+case cmd
+  when "init"
+    `cp #{skl} #{dot}`
+
+  when "projects"
+    puts cnf['projects']
+
+
+end

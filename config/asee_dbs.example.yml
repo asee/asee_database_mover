@@ -1,0 +1,9 @@
+projects:
+  - 'ndseg'
+  - 'sffp'
+
+ndseg_production:
+  database: ndseg_production
+  username: ruby
+  password:  
+  host: localhost
