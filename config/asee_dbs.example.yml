@@ -1,9 +1,15 @@
+defaults:
+  env: production
+
 projects:
   - 'ndseg'
-  - 'sffp'
 
-ndseg_production:
-  database: ndseg_production
-  username: ruby
-  password:  
-  host: localhost
+project:
+  development:
+    username: root
+    password:  
+    host: localhost
+  production:
+    username: ruby
+    password:  
+    host: localhost
