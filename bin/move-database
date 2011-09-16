@@ -46,40 +46,33 @@ case cmd
 
   when "views"
     prj = ARGV.shift
-    db = "#{prj}_#{src}"
-    puts db
-    dsn = cnf[prj][src]
-    cnf['database'] = db
+    puts "Source #{src}, Target #{tgt}"
     dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
     dbm.get_view_defs
 
   when "dump"
     prj = ARGV.shift
-    db = "#{prj}_#{src}"
-    puts db
-    dsn = cnf[prj][src]
-    cnf['database'] = db
+    puts "Source #{src}, Target #{tgt}"
     dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
     puts dbm.dump_db
 
   when "fix"
     prj = ARGV.shift
-    db = "#{prj}_#{src}"
-    tgt = "#{prj}_#{tgt}"
-    puts db
-    dsn = cnf[prj][src]
-    cnf['database'] = db
+    puts "Source #{src}, Target #{tgt}"
     dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
     dbm.fix_view_def
 
   when "deps"
     prj = ARGV.shift
-    db = "#{prj}_#{src}"
-    tgt = "#{prj}_#{tgt}"
-    puts db
-    dsn = cnf[prj][src]
-    cnf['database'] = db
+    puts "Source #{src}, Target #{tgt}"
     dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
     dbm.dump_deps
+
+  when "load"
+    prj = ARGV.shift
+    puts "Source #{src}, Target #{tgt}"
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm.load_db
+    dbm.load_deps
 
 end

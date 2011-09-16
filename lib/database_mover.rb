@@ -32,18 +32,20 @@ module ASEE
       @src = src
       @tgt = tgt 
       @cnf = cnf 
-      @dump = cnf['defaults']['dump']
+      @dump  = cnf['defaults']['dump']
+      @cmd   = cnf['defaults']['cmd']
+      @admin = cnf['defaults']['admin']
       @src_cnf = {
         :host => cnf[prj][src]['host'],
-        :database => "#{@prj}_#{@src}",
+        :database => "#{prj}_#{src}",
         :username => cnf[prj][src]['username'],
         :password => cnf[prj][src]['password']  
       }
       @tgt_cnf = {
-        :host => cnf[prj][src]['host'],
-        :database => "#{@prj}_#{@tgt}",
-        :username => cnf[prj][src]['username'],
-        :password => cnf[prj][src]['password']  
+        :host => cnf[prj][tgt]['host'],
+        :database => "#{prj}_#{tgt}",
+        :username => cnf[prj][tgt]['username'],
+        :password => cnf[prj][tgt]['password']  
       }
       @deps = ['applicants', "#{@prj}_awards", 'universities']
       perform_sanity_check
@@ -91,20 +93,29 @@ module ASEE
 
     def dump_deps
       @deps.each do |dep_db|
-        db = "#{dep_db}_#{src}"
+        db = "#{dep_db}_#{@src}"
         dump_db({},db)
       end
-
     end
 
-    def load_db(db_hash, source_db_name)
-      command = "#{MYSQLADMIN} #{db_command_options(db_hash, false)} create #{db_hash[:database]}"
-      puts command
-      `#{command}`
+    def load_db(override_db=nil)
+      mycnf = @tgt_cnf
+      mycnf[:database] = override_db if override_db.is_a?(String)
+      perform_sanity_check(mycnf)
+      command = "#{@admin} #{db_command_options(mycnf, false)} create #{mycnf[:database]}"
+      #puts command
+#      `#{command}`
       
-      command = "#{MYSQL} #{db_command_options(db_hash)} < mysqldumps/#{source_db_name}.sql"
+      command = "#{@cmd} #{db_command_options(mycnf)} < mysqldumps/#{@src_cnf[:database]}.sql"
       puts command
-      `#{command}`
+#      `#{command}`
+    end
+
+    def load_deps
+      @deps.each do |dep_db|
+        db = "#{dep_db}_#{@tgt}"
+        load_db(db)
+      end
     end
 
     def db_command_options(db_hash, include_database=true)
@@ -114,19 +125,17 @@ module ASEE
       "-h #{db_hash[:host]} -u #{db_hash[:username]} #{p} #{d}"
     end
 
-
-    def perform_sanity_check
-      if @tgt_cnf[:database] =~ /_production/
+    def perform_sanity_check(tgt_cnf=nil)
+      mycnf = tgt_cnf.nil? ? @tgt_cnf : tgt_cnf
+      unless mycnf[:database] =~ /_development/
+        puts "\n\n\n\t\t*** WARNING ***\n\n\t\tYou have selected a target other than development (#{mycnf[:database]}).\n\t\tWaiting 10 seconds to continue..."
+        sleep(10)
+      end
+      if mycnf[:database] =~ /_production/
         raise "The destination database appears to be production!  Is that really what you want?"
       end
     end
 
-#  # dump secondary databases
-#  SECONDARY_DATABASES.each_key do |db|
-#    puts "Dumping #{db}"
-#    dump_db(SOURCE_DATABASE.merge(:database => db))
-#  end
-#
 #  # restore primary and secondary databases
 #  load_db(DESTINATION_DATABASE, SOURCE_DATABASE[:database])
 #  SECONDARY_DATABASES.each_pair do |source, dest|
