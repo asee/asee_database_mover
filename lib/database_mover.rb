@@ -66,12 +66,28 @@ module ASEE
       end
       con.close
       puts "found #{views_hash.size} views"
+      views_hash
+    end
+
+    def refresh_views
+      views_hash = get_view_defs
+      #puts views_hash.inspect
+      con = Mysql.connect(@src_cnf[:host], @src_cnf[:username], 
+        @src_cnf[:password], @src_cnf[:database])
+      views_hash.each_pair do |view_name, view_def|
+        puts "Fixing #{view_name}"
+        fixed_view_def = fix_view_def(view_name, view_def)
+        puts fixed_view_def
+        #con.query(fixed_view_def)
+      end
     end
 
     # Fixes a "create view" statement to the right format for the destination db.
-    def fix_view_def(view_name, view_def, secondary_databases)
+    def fix_view_def(view_name, view_def)
       fixed_view_def = view_def.gsub(/\A.* AS select /, "create or replace view #{view_name} as select ")
-      secondary_databases.each_pair do |from, to|
+      @deps.each do |name|
+        from = "#{name}_#{@src}"
+        to   = "#{name}_#{@tgt}"
         fixed_view_def = fixed_view_def.gsub(from, to)
       end
       fixed_view_def
@@ -108,7 +124,7 @@ module ASEE
       
       command = "#{@cmd} #{db_command_options(mycnf)} < mysqldumps/#{@src_cnf[:database]}.sql"
       puts command
-#      `#{command}`
+      `#{command}`
     end
 
     def load_deps
@@ -136,13 +152,6 @@ module ASEE
       end
     end
 
-#  # restore primary and secondary databases
-#  load_db(DESTINATION_DATABASE, SOURCE_DATABASE[:database])
-#  SECONDARY_DATABASES.each_pair do |source, dest|
-#    puts "Restoring #{source} to #{dest}"
-#    load_db(DESTINATION_DATABASE.merge(:database => dest), source)
-#  end
-#
 #  # For each view, filter definition and create on destination
 #  con = Mysql.connect(DESTINATION_DATABASE[:host], DESTINATION_DATABASE[:username], 
 #    DESTINATION_DATABASE[:password], DESTINATION_DATABASE[:database])
