@@ -72,13 +72,14 @@ module ASEE
     def refresh_views
       views_hash = get_view_defs
       #puts views_hash.inspect
-      con = Mysql.connect(@src_cnf[:host], @src_cnf[:username], 
-        @src_cnf[:password], @src_cnf[:database])
+      con = Mysql.connect(@tgt_cnf[:host], @tgt_cnf[:username], 
+        @tgt_cnf[:password], @tgt_cnf[:database])
       views_hash.each_pair do |view_name, view_def|
         puts "Fixing #{view_name}"
         fixed_view_def = fix_view_def(view_name, view_def)
-        #puts fixed_view_def
-        #con.query(fixed_view_def)
+        puts fixed_view_def
+        puts "\n"
+        con.query(fixed_view_def)
       end
     end
 
