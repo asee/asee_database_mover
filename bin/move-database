@@ -1,5 +1,6 @@
-#!/usr/bin/env ruby1.9.1
+#!/usr/bin/env ruby
 
+require 'rubygems'
 require 'trollop'
 require 'yaml'
 require File.join(File.dirname(File.dirname(__FILE__)),'/lib/database_mover')
@@ -48,6 +49,7 @@ case cmd
     puts db
     dsn = cnf[prj][env]
     cnf['database'] = db
-    puts ASEE::DatabaseMover.get_view_defs(dsn)
+    dbm = ASEE::DatabaseMover.new(prj, env, cnf)
+    puts dbm.get_view_defs
 
 end
