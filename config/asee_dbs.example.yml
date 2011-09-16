@@ -1,5 +1,6 @@
 defaults:
   env: production
+  dump: mysqldump
 
 projects:
   - 'ndseg'

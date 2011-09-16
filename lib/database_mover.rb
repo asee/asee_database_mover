@@ -20,7 +20,6 @@ SECONDARY_DATABASES = {
   'universities_staging' => 'universities_development'}
 
 MYSQL = 'mysql5'
-MYSQLDUMP = 'mysqldump5'
 MYSQLADMIN = 'mysqladmin5'
 
 module ASEE
@@ -32,12 +31,14 @@ module ASEE
       @prj = prj 
       @env = env
       @cnf = cnf 
+      @dump = cnf['defaults']['dump']
       @src_cnf = {
         :host => cnf[prj][env]['host'],
         :database => "#{@prj}_#{@env}",
         :username => cnf[prj][env]['username'],
         :password => cnf[prj][env]['password']  
       }
+      @deps = ['applicants', "#{@prj}", 'universities']
     end
 
     # returns a hash, view_name => create view statement
@@ -67,13 +68,13 @@ module ASEE
     end
 
     # dumps the database using mysqldump
-    def dump_db(db_hash, ignore_tables = {})
-      dump_command = "#{MYSQLDUMP} #{db_command_options(db_hash)}"
+    def dump_db(ignore_tables = {})
+      dump_command = "#{@dump} #{db_command_options(@src_cnf)}"
       ignore_tables.each_key do |view_name|
-        dump_command += " --ignore-table=#{db_hash[:database]}.#{view_name}"
+        dump_command += " --ignore-table=#{@src_cnf[:database]}.#{view_name}"
       end
       `mkdir -p mysqldumps`
-      dump_command += " -r mysqldumps/#{db_hash[:database]}.sql"
+      dump_command += " -r mysqldumps/#{@src_cnf[:database]}.sql"
       puts dump_command
       `#{dump_command}`
     end

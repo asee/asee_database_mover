@@ -52,4 +52,13 @@ case cmd
     dbm = ASEE::DatabaseMover.new(prj, env, cnf)
     puts dbm.get_view_defs
 
+  when "dump"
+    prj = ARGV.shift
+    db = "#{prj}_#{env}"
+    puts db
+    dsn = cnf[prj][env]
+    cnf['database'] = db
+    dbm = ASEE::DatabaseMover.new(prj, env, cnf)
+    puts dbm.dump_db
+
 end
