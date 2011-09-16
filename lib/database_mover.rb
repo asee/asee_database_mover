@@ -77,7 +77,7 @@ module ASEE
       views_hash.each_pair do |view_name, view_def|
         puts "Fixing #{view_name}"
         fixed_view_def = fix_view_def(view_name, view_def)
-        puts fixed_view_def
+        #puts fixed_view_def
         #con.query(fixed_view_def)
       end
     end
@@ -119,10 +119,11 @@ module ASEE
       mycnf[:database] = override_db if override_db.is_a?(String)
       perform_sanity_check(mycnf)
       command = "#{@admin} #{db_command_options(mycnf, false)} create #{mycnf[:database]}"
-      #puts command
-#      `#{command}`
+      puts command
+      `#{command}`
       
-      command = "#{@cmd} #{db_command_options(mycnf)} < mysqldumps/#{@src_cnf[:database]}.sql"
+      src_db = override_db.is_a?(String) ? override_db.gsub(@tgt,@src) : @src_cnf[:database]
+      command = "#{@cmd} #{db_command_options(mycnf)} < mysqldumps/#{src_db}.sql"
       puts command
       `#{command}`
     end
