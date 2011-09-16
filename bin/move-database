@@ -32,7 +32,8 @@ skl = File.join(File.dirname(File.dirname(__FILE__)), 'config', 'asee_dbs.exampl
 
 if File.exists?(dot)
   cnf = YAML.load(File.open(dot))
-  env = ENV.has_key?('RUN_ENV') ? ENV['RUN_ENV'] : cnf['defaults']['env']
+  src = ENV.has_key?('RUN_SRC') ? ENV['RUN_SRC'] : cnf['defaults']['env']['src']
+  tgt = ENV.has_key?('RUN_TGT') ? ENV['RUN_TGT'] : cnf['defaults']['env']['tgt']
 end
 
 
@@ -45,20 +46,40 @@ case cmd
 
   when "views"
     prj = ARGV.shift
-    db = "#{prj}_#{env}"
+    db = "#{prj}_#{src}"
     puts db
-    dsn = cnf[prj][env]
+    dsn = cnf[prj][src]
     cnf['database'] = db
-    dbm = ASEE::DatabaseMover.new(prj, env, cnf)
-    puts dbm.get_view_defs
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm.get_view_defs
 
   when "dump"
     prj = ARGV.shift
-    db = "#{prj}_#{env}"
+    db = "#{prj}_#{src}"
     puts db
-    dsn = cnf[prj][env]
+    dsn = cnf[prj][src]
     cnf['database'] = db
-    dbm = ASEE::DatabaseMover.new(prj, env, cnf)
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
     puts dbm.dump_db
+
+  when "fix"
+    prj = ARGV.shift
+    db = "#{prj}_#{src}"
+    tgt = "#{prj}_#{tgt}"
+    puts db
+    dsn = cnf[prj][src]
+    cnf['database'] = db
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm.fix_view_def
+
+  when "deps"
+    prj = ARGV.shift
+    db = "#{prj}_#{src}"
+    tgt = "#{prj}_#{tgt}"
+    puts db
+    dsn = cnf[prj][src]
+    cnf['database'] = db
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm.dump_deps
 
 end

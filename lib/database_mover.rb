@@ -25,20 +25,28 @@ MYSQLADMIN = 'mysqladmin5'
 module ASEE
   class DatabaseMover
 
-    attr_accessor :prj, :env, :cnf
+    attr_accessor :prj, :src, :cnf
 
-    def initialize(prj, env, cnf)
+    def initialize(prj, cnf, src, tgt)
       @prj = prj 
-      @env = env
+      @src = src
+      @tgt = tgt 
       @cnf = cnf 
       @dump = cnf['defaults']['dump']
       @src_cnf = {
-        :host => cnf[prj][env]['host'],
-        :database => "#{@prj}_#{@env}",
-        :username => cnf[prj][env]['username'],
-        :password => cnf[prj][env]['password']  
+        :host => cnf[prj][src]['host'],
+        :database => "#{@prj}_#{@src}",
+        :username => cnf[prj][src]['username'],
+        :password => cnf[prj][src]['password']  
       }
-      @deps = ['applicants', "#{@prj}", 'universities']
+      @tgt_cnf = {
+        :host => cnf[prj][src]['host'],
+        :database => "#{@prj}_#{@tgt}",
+        :username => cnf[prj][src]['username'],
+        :password => cnf[prj][src]['password']  
+      }
+      @deps = ['applicants', "#{@prj}_awards", 'universities']
+      perform_sanity_check
     end
 
     # returns a hash, view_name => create view statement
@@ -55,7 +63,7 @@ module ASEE
         views_hash[view_name] = view_defs.fetch_row[1]
       end
       con.close
-      views_hash
+      puts "found #{views_hash.size} views"
     end
 
     # Fixes a "create view" statement to the right format for the destination db.
@@ -68,15 +76,25 @@ module ASEE
     end
 
     # dumps the database using mysqldump
-    def dump_db(ignore_tables = {})
-      dump_command = "#{@dump} #{db_command_options(@src_cnf)}"
+    def dump_db(ignore_tables = {}, override_db=nil)
+      mycnf = @src_cnf
+      mycnf[:database] = override_db if override_db.is_a?(String)
+      dump_command = "#{@dump} #{db_command_options(mycnf)}"
       ignore_tables.each_key do |view_name|
-        dump_command += " --ignore-table=#{@src_cnf[:database]}.#{view_name}"
+        dump_command += " --ignore-table=#{mycnf[:database]}.#{view_name}"
       end
       `mkdir -p mysqldumps`
-      dump_command += " -r mysqldumps/#{@src_cnf[:database]}.sql"
+      dump_command += " -r mysqldumps/#{mycnf[:database]}.sql"
       puts dump_command
       `#{dump_command}`
+    end
+
+    def dump_deps
+      @deps.each do |dep_db|
+        db = "#{dep_db}_#{src}"
+        dump_db({},db)
+      end
+
     end
 
     def load_db(db_hash, source_db_name)
@@ -97,20 +115,12 @@ module ASEE
     end
 
 
-    def perform_sanity_check(source_hash, dest_hash)
-      if dest_hash[:database] =~ /_production/
+    def perform_sanity_check
+      if @tgt_cnf[:database] =~ /_production/
         raise "The destination database appears to be production!  Is that really what you want?"
       end
     end
 
-#  perform_sanity_check(SOURCE_DATABASE, DESTINATION_DATABASE)
-#
-#  # connect to source, get list of views and definitions
-#  views_hash = get_view_defs(SOURCE_DATABASE)
-#  puts "found #{views_hash.size} views"
-#
-#  # dump source database without views
-#  dump_db(SOURCE_DATABASE, views_hash)
 #  # dump secondary databases
 #  SECONDARY_DATABASES.each_key do |db|
 #    puts "Dumping #{db}"

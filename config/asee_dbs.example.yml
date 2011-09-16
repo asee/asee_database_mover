@@ -1,9 +1,11 @@
 defaults:
-  env: production
+  env:
+    src: production
+    src: development 
   dump: mysqldump
 
 projects:
-  - 'ndseg'
+  - 'project'
 
 project:
   development:
