@@ -5,7 +5,7 @@ require 'trollop'
 require 'yaml'
 require File.join(File.dirname(File.dirname(__FILE__)),'/lib/database_mover')
 
-SUB_COMMANDS = %w(projects move)
+SUB_COMMANDS = %w(projects init views dump deps mirror load refresh)
 global_opts = Trollop::options do
   banner <<-EOS
  
@@ -23,11 +23,12 @@ Usage
 
 where [options] are:
 EOS
-  opt :dry_run, "Don't actually do anything", :short => "-n"
+  opt :dry_run, "Don't actually do anything", :short => "-n", :default => false
   opt :verbose, "Increase verbosity", :short => "-v"
   stop_on SUB_COMMANDS
 end
 
+dry_run = global_opts[:dry_run] 
 cmd = ARGV.shift
 dot = File.expand_path("~/.asee_dbs.yml")
 skl = File.join(File.dirname(File.dirname(__FILE__)), 'config', 'asee_dbs.example.yml')
@@ -41,7 +42,11 @@ end
 
 case cmd
   when "init"
-    `cp #{skl} #{dot}`
+    unless File.exists?(dot)
+      `cp #{skl} #{dot}`
+    else
+      puts "#{dot} exists. Manually remove it before initializing."
+    end
 
   when "projects"
     puts cnf['projects']
@@ -49,32 +54,32 @@ case cmd
   when "views"
     prj = ARGV.shift
     puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     dbm.get_view_defs
 
   when "dump"
     prj = ARGV.shift
     puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     views_hash = dbm.get_view_defs
     puts dbm.dump_db(views_hash)
 
   when "fix"
     prj = ARGV.shift
     puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     dbm.fix_view_def
 
   when "deps"
     prj = ARGV.shift
     puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     dbm.dump_deps
 
   when "load"
     prj = ARGV.shift
     puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     dbm.load_db
     dbm.load_deps
     dbm.refresh_views
@@ -82,13 +87,13 @@ case cmd
   when "refresh"
     prj = ARGV.shift
     puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     dbm.refresh_views
 
   when "mirror"
     prj = ARGV.shift
     puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt)
+    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     views_hash = dbm.get_view_defs
     dbm.dump_db(views_hash)
     dbm.dump_deps
