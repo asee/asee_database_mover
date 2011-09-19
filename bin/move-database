@@ -39,6 +39,10 @@ if File.exists?(dot)
   tgt = ENV.has_key?('RUN_TGT') ? ENV['RUN_TGT'] : cnf['defaults']['env']['tgt']
 end
 
+unless cmd == 'projects' || cmd.empty?
+  prj = ARGV.shift
+  dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
+end
 
 case cmd
   when "init"
@@ -50,6 +54,10 @@ case cmd
 
   when "projects"
     puts cnf['projects']
+
+  when "show"
+    dbm.show_configuration
+
 
   when "views"
     prj = ARGV.shift
@@ -91,9 +99,6 @@ case cmd
     dbm.refresh_views
 
   when "mirror"
-    prj = ARGV.shift
-    puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     views_hash = dbm.get_view_defs
     dbm.dump_db(views_hash)
     dbm.dump_deps
@@ -101,5 +106,6 @@ case cmd
     dbm.load_deps
     dbm.get_view_defs
     dbm.refresh_views
+    dbm.purge_dumps
 
 end

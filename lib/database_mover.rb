@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'mysql'
+require 'terminal-table/import'
 
 module ASEE
   class DatabaseMover
@@ -31,6 +32,13 @@ module ASEE
       @dry_run = dry_run
 
       @debug = 1
+    end
+
+    def show_configuration
+      t = table ['Configuration', 'Source', 'Target'] 
+      t << ['Database', @src_cnf[:database], @tgt_cnf[:database]]
+      t << ['Host', @src_cnf[:host], @tgt_cnf[:host]]
+      puts t
     end
 
     # returns a hash, view_name => create view statement
@@ -93,6 +101,10 @@ module ASEE
         dump_db({},db)
       end
       myputs @src_cnf.inspect
+    end
+
+    def purge_dumps
+      `rm mysqldumps/*`
     end
 
     def load_db(override_db=nil)

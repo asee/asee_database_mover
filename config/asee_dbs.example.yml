@@ -5,6 +5,7 @@ defaults:
   dump: mysqldump
   cmd: mysql
   admin: mysqladmin
+  purge: false
 
 projects:
   - 'project'
