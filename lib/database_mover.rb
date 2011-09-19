@@ -6,7 +6,7 @@ module ASEE
 
     attr_accessor :prj, :src, :cnf
 
-    def initialize(prj, cnf, src, tgt)
+    def initialize(prj, cnf, src, tgt, dry_run = false)
       @prj = prj 
       @src = src
       @tgt = tgt 
@@ -28,7 +28,7 @@ module ASEE
       }
       @deps = ['applicants', "#{@prj}_awards", 'universities']
       perform_sanity_check
-      @dry_run = false
+      @dry_run = dry_run
 
       @debug = 1
     end
