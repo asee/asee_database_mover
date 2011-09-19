@@ -1,27 +1,6 @@
 require 'rubygems'
 require 'mysql'
 
-SOURCE_DATABASE = {
-  :host => 'localhost',
-  :database => 'ndseg_2011_development',
-  :username => 'root',
-  :password => ''  
-}
-
-DESTINATION_DATABASE = {
-  :host => 'localhost',
-  :database => 'ndseg_development',
-  :username => 'root'
-}
-
-SECONDARY_DATABASES = {
-  'applicants_staging' => 'applicants_development',
-  'ndseg_awards_staging' => 'ndseg_awards_development',  
-  'universities_staging' => 'universities_development'}
-
-MYSQL = 'mysql5'
-MYSQLADMIN = 'mysqladmin5'
-
 module ASEE
   class DatabaseMover
 
@@ -49,15 +28,17 @@ module ASEE
       }
       @deps = ['applicants', "#{@prj}_awards", 'universities']
       perform_sanity_check
+      @dry_run = false
+
+      @debug = 1
     end
 
     # returns a hash, view_name => create view statement
     def get_view_defs
-      source_db_hash = @src_cnf
-      con = Mysql.connect(source_db_hash[:host], source_db_hash[:username], 
-        source_db_hash[:password], source_db_hash[:database])
-      puts "connected"
-      views = con.query("select * from information_schema.views where table_schema = '#{source_db_hash[:database]}'")
+      con = Mysql.connect(@src_cnf[:host], @src_cnf[:username], 
+        @src_cnf[:password], @src_cnf[:database])
+      myputs "connected to #{@src_cnf[:database]}"
+      views = con.query("select * from information_schema.views where table_schema = '#{@src_cnf[:database]}'")
       views_hash = {}
       views.each do |v|
         view_name = v[2]
@@ -65,22 +46,20 @@ module ASEE
         views_hash[view_name] = view_defs.fetch_row[1]
       end
       con.close
-      puts "found #{views_hash.size} views"
+      myputs "found #{views_hash.size} views\n"
       views_hash
     end
 
     def refresh_views
       views_hash = get_view_defs
-      #puts views_hash.inspect
-      con = Mysql.connect(@tgt_cnf[:host], @tgt_cnf[:username], 
-        @tgt_cnf[:password], @tgt_cnf[:database])
+      con = Mysql.connect(@tgt_cnf[:host], @tgt_cnf[:username], @tgt_cnf[:password], @tgt_cnf[:database]) unless @dry_run
       views_hash.each_pair do |view_name, view_def|
-        puts "Fixing #{view_name}"
+        myputs "Fixing #{view_name}"
         fixed_view_def = fix_view_def(view_name, view_def)
-        puts fixed_view_def
-        puts "\n"
-        con.query(fixed_view_def)
+        con.query(fixed_view_def) unless @dry_run
+        myputs "Fixing #{fixed_view_def}" if @debug > 5
       end
+      con.close unless @dry_run
     end
 
     # Fixes a "create view" statement to the right format for the destination db.
@@ -96,16 +75,16 @@ module ASEE
 
     # dumps the database using mysqldump
     def dump_db(ignore_tables = {}, override_db=nil)
-      mycnf = @src_cnf
+      mycnf = @src_cnf.dup
       mycnf[:database] = override_db if override_db.is_a?(String)
+      myputs(@src_cnf.inspect,5)
       dump_command = "#{@dump} #{db_command_options(mycnf)}"
       ignore_tables.each_key do |view_name|
         dump_command += " --ignore-table=#{mycnf[:database]}.#{view_name}"
       end
       `mkdir -p mysqldumps`
       dump_command += " -r mysqldumps/#{mycnf[:database]}.sql"
-      puts dump_command
-      `#{dump_command}`
+      mysys(dump_command)
     end
 
     def dump_deps
@@ -113,20 +92,20 @@ module ASEE
         db = "#{dep_db}_#{@src}"
         dump_db({},db)
       end
+      myputs @src_cnf.inspect
     end
 
     def load_db(override_db=nil)
-      mycnf = @tgt_cnf
+      myputs @src_cnf.inspect if @debug
+      mycnf = @tgt_cnf.dup
       mycnf[:database] = override_db if override_db.is_a?(String)
       perform_sanity_check(mycnf)
       command = "#{@admin} #{db_command_options(mycnf, false)} create #{mycnf[:database]}"
-      puts command
-      `#{command}`
+      mysys(command)
       
       src_db = override_db.is_a?(String) ? override_db.gsub(@tgt,@src) : @src_cnf[:database]
       command = "#{@cmd} #{db_command_options(mycnf)} < mysqldumps/#{src_db}.sql"
-      puts command
-      `#{command}`
+      mysys(command)
     end
 
     def load_deps
@@ -144,7 +123,7 @@ module ASEE
     end
 
     def perform_sanity_check(tgt_cnf=nil)
-      mycnf = tgt_cnf.nil? ? @tgt_cnf : tgt_cnf
+      mycnf = tgt_cnf.nil? ? @tgt_cnf.dup : tgt_cnf
       unless mycnf[:database] =~ /_development/
         puts "\n\n\n\t\t*** WARNING ***\n\n\t\tYou have selected a target other than development (#{mycnf[:database]}).\n\t\tWaiting 10 seconds to continue..."
         sleep(10)
@@ -154,14 +133,16 @@ module ASEE
       end
     end
 
-#  # For each view, filter definition and create on destination
-#  con = Mysql.connect(DESTINATION_DATABASE[:host], DESTINATION_DATABASE[:username], 
-#    DESTINATION_DATABASE[:password], DESTINATION_DATABASE[:database])
-#  views_hash.each_pair do |view_name, view_def|
-#    puts "Fixing #{view_name}"
-#    fixed_view_def = fix_view_def(view_name, view_def, SECONDARY_DATABASES)
-#    con.query(fixed_view_def)
-#  end
-#  con.close
+    def mysys(cmd)
+      puts cmd if @debug
+      `#{cmd}` unless @dry_run  
+    end
+
+    def myputs(str,dbg=5)
+      return unless @debug >= dbg
+      puts str
+      puts "\n"
+    end
+
   end
 end

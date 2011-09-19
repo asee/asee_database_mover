@@ -13,11 +13,13 @@ global_opts = Trollop::options do
 Usage
 -----
 
-    database-move init
-    database-move projects 
+    move-database init
+    move-database projects 
 
-    database-move move <project> 
-    database-move views <project> 
+    move-database views <project> 
+    move-database dump <project> 
+    move-database deps <project> 
+    move-database mirror <project> 
 
 where [options] are:
 EOS
@@ -92,6 +94,7 @@ case cmd
     dbm.dump_deps
     dbm.load_db
     dbm.load_deps
+    dbm.get_view_defs
     dbm.refresh_views
 
 end
