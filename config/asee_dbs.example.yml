@@ -1,0 +1,24 @@
+defaults:
+  env:
+    src: staging 
+    src: development 
+  dump: mysqldump
+  cmd: mysql
+  admin: mysqladmin
+
+projects:
+  - 'project'
+
+project:
+  development:
+    username: root
+    password:  
+    host: localhost
+  staging:
+    username: ruby
+    password:  
+    host: localhost
+  production:
+    username: ruby
+    password:  
+    host: dnu 
