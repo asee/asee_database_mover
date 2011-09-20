@@ -29,7 +29,7 @@ module ASEE
         :username => cnf[prj][tgt]['username'],
         :password => cnf[prj][tgt]['password']  
       }
-      @deps = ['applicants', "#{@prj}_awards", 'universities']
+      @deps = cnf[prj].has_key?('deps') ? cnf[prj]['deps'] : ['applicants', "#{@prj}_awards", 'universities']
       perform_sanity_check
       @dry_run = dry_run
       @debug = debug
@@ -103,6 +103,7 @@ module ASEE
     end
 
     def dump_deps
+      return unless @deps.respond_to?(:each)
       @deps.each do |dep_db|
         db = "#{dep_db}_#{@src}"
         dump_db({},db)
@@ -128,6 +129,7 @@ module ASEE
     end
 
     def load_deps
+      return unless @deps.respond_to?(:each)
       @deps.each do |dep_db|
         db = "#{dep_db}_#{@tgt}"
         load_db(db)
