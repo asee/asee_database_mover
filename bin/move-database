@@ -60,42 +60,24 @@ case cmd
 
 
   when "views"
-    prj = ARGV.shift
-    puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     dbm.get_view_defs
 
   when "dump"
-    prj = ARGV.shift
-    puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     views_hash = dbm.get_view_defs
     puts dbm.dump_db(views_hash)
 
   when "fix"
-    prj = ARGV.shift
-    puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     dbm.fix_view_def
 
   when "deps"
-    prj = ARGV.shift
-    puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     dbm.dump_deps
 
   when "load"
-    prj = ARGV.shift
-    puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     dbm.load_db
     dbm.load_deps
     dbm.refresh_views
 
   when "refresh"
-    prj = ARGV.shift
-    puts "Source #{src}, Target #{tgt}"
-    dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
     dbm.refresh_views
 
   when "mirror"

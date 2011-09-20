@@ -1,7 +1,7 @@
 defaults:
   env:
     src: staging 
-    src: development 
+    tgt: development 
   dump: mysqldump
   cmd: mysql
   admin: mysqladmin
