@@ -39,7 +39,7 @@ if File.exists?(dot)
   tgt = ENV.has_key?('RUN_TGT') ? ENV['RUN_TGT'] : cnf['defaults']['env']['tgt']
 end
 
-unless cmd == 'projects' || cmd.empty?
+unless [nil, 'projects', 'init'].include?(cmd)
   prj = ARGV.shift
   dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
 end
