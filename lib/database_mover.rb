@@ -7,7 +7,7 @@ module ASEE
 
     attr_accessor :prj, :src, :cnf
 
-    def initialize(prj, cnf, src, tgt, dry_run = false)
+    def initialize(prj, cnf, src, tgt, dry_run = false, debug = 0)
       @prj = prj 
       @src = src
       @tgt = tgt 
@@ -15,23 +15,26 @@ module ASEE
       @dump  = cnf['defaults']['dump']
       @cmd   = cnf['defaults']['cmd']
       @admin = cnf['defaults']['admin']
+      @src_db = cnf[prj][src].has_key?('database') ? cnf[prj][src]['database'] : "#{prj}_#{src}"
+      @tgt_db = cnf[prj][tgt].has_key?('database') ? cnf[prj][tgt]['database'] : "#{prj}_#{tgt}"
       @src_cnf = {
         :host => cnf[prj][src]['host'],
-        :database => "#{prj}_#{src}",
+        :database => @src_db,
         :username => cnf[prj][src]['username'],
         :password => cnf[prj][src]['password']  
       }
       @tgt_cnf = {
         :host => cnf[prj][tgt]['host'],
-        :database => "#{prj}_#{tgt}",
+        :database => @tgt_db,
         :username => cnf[prj][tgt]['username'],
         :password => cnf[prj][tgt]['password']  
       }
       @deps = ['applicants', "#{@prj}_awards", 'universities']
       perform_sanity_check
       @dry_run = dry_run
+      @debug = debug
+      @ignore_tables = cnf[prj].has_key?('ignore_tables') ? cnf[prj]['ignore_tables'] : {}
 
-      @debug = 1
     end
 
     def show_configuration
@@ -87,7 +90,11 @@ module ASEE
       mycnf[:database] = override_db if override_db.is_a?(String)
       myputs(@src_cnf.inspect,5)
       dump_command = "#{@dump} #{db_command_options(mycnf)}"
-      ignore_tables.each_key do |view_name|
+      skip_tables = ignore_tables.keys
+      unless @ignore_tables.empty?
+        skip_tables = skip_tables | @ignore_tables 
+      end
+      skip_tables.each do |view_name|
         dump_command += " --ignore-table=#{mycnf[:database]}.#{view_name}"
       end
       `mkdir -p mysqldumps`
