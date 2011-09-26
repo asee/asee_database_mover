@@ -89,7 +89,7 @@ module ASEE
       mycnf = @src_cnf.dup
       mycnf[:database] = override_db if override_db.is_a?(String)
       myputs(@src_cnf.inspect,5)
-      dump_command = "#{@dump} #{db_command_options(mycnf)}"
+      dump_command = "#{@dump} --lock-tables=FALSE #{db_command_options(mycnf)}"
       skip_tables = ignore_tables.keys
       unless @ignore_tables.empty?
         skip_tables = skip_tables | @ignore_tables 
