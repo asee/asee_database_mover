@@ -29,7 +29,8 @@ module ASEE
         :username => cnf[prj][tgt]['username'],
         :password => cnf[prj][tgt]['password']  
       }
-      @deps = cnf[prj].has_key?('deps') ? cnf[prj]['deps'] : ['applicants', "#{@prj}_awards", 'universities']
+      @src_deps = cnf[prj].has_key?('deps') ? cnf[prj][src]['deps'] : ['applicants', "#{@prj}_awards", 'universities'].each {|x| "#{x}_#{src}"}
+      @tgt_deps = cnf[prj].has_key?('deps') ? cnf[prj][tgt]['deps'] : ['applicants', "#{@prj}_awards", 'universities'].each {|x| "#{x}_#{tgt}"}
       perform_sanity_check
       @dry_run = dry_run
       @debug = debug
@@ -76,12 +77,16 @@ module ASEE
     # Fixes a "create view" statement to the right format for the destination db.
     def fix_view_def(view_name, view_def)
       fixed_view_def = view_def.gsub(/\A.* AS select /, "create or replace view #{view_name} as select ")
-      @deps.each do |name|
-        from = "#{name}_#{@src}"
-        to   = "#{name}_#{@tgt}"
-        fixed_view_def = fixed_view_def.gsub(from, to)
+      if @src_deps.count == @tgt_deps.count
+        @src_deps.each_index do |idx|
+          from = @src_deps[idx] #"#{name}_#{@src.gsub('1','')}"
+          to   = @tgt_deps[idx] #"#{name}_#{@tgt.gsub('1','')}"
+          fixed_view_def = fixed_view_def.gsub(from, to)
+        end
+        fixed_view_def
+      else
+        puts "Source and target dependent databases must be equal in quantity."
       end
-      fixed_view_def
     end
 
     # dumps the database using mysqldump
@@ -103,9 +108,8 @@ module ASEE
     end
 
     def dump_deps
-      return unless @deps.respond_to?(:each)
-      @deps.each do |dep_db|
-        db = "#{dep_db}_#{@src}"
+      return unless @src_deps.respond_to?(:each)
+      @src_deps.each do |db|
         dump_db({},db)
       end
       myputs @src_cnf.inspect
@@ -129,9 +133,8 @@ module ASEE
     end
 
     def load_deps
-      return unless @deps.respond_to?(:each)
-      @deps.each do |dep_db|
-        db = "#{dep_db}_#{@tgt}"
+      return unless @tgt_deps.respond_to?(:each)
+      @tgt_deps.each do |db|
         load_db(db)
       end
     end
