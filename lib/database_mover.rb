@@ -29,8 +29,8 @@ module ASEE
         :username => cnf[prj][tgt]['username'],
         :password => cnf[prj][tgt]['password']  
       }
-      @src_deps = cnf[prj].has_key?('deps') ? cnf[prj][src]['deps'] : ['applicants', "#{@prj}_awards", 'universities'].each {|x| "#{x}_#{src}"}
-      @tgt_deps = cnf[prj].has_key?('deps') ? cnf[prj][tgt]['deps'] : ['applicants', "#{@prj}_awards", 'universities'].each {|x| "#{x}_#{tgt}"}
+      @src_deps = cnf[prj].has_key?('deps') ? cnf[prj][src]['deps'] : ['applicants', "#{@prj}_awards", 'universities'].map {|x| "#{x}_#{src}"}
+      @tgt_deps = cnf[prj].has_key?('deps') ? cnf[prj][tgt]['deps'] : ['applicants', "#{@prj}_awards", 'universities'].map {|x| "#{x}_#{tgt}"}
       perform_sanity_check
       @dry_run = dry_run
       @debug = debug
