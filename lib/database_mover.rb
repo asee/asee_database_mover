@@ -165,8 +165,8 @@ module ASEE
     def perform_sanity_check(tgt_cnf=nil)
       mycnf = tgt_cnf.nil? ? @tgt_cnf.dup : tgt_cnf
       unless mycnf[:database] =~ /_development/
-        puts "\n\n\n\t\t*** WARNING ***\n\n\t\tYou have selected a target other than development (#{mycnf[:database]}).\n\t\tWaiting 10 seconds to continue..."
-        sleep(10)
+        puts "\n\n\n\t\t*** WARNING ***\n\n\t\tYou have selected a target other than development (#{mycnf[:database]}).\n\t\tWaiting 5 seconds to continue..."
+        sleep(5)
       end
       if mycnf[:database] =~ /_production/
         raise "The destination database appears to be production!  Is that really what you want?"

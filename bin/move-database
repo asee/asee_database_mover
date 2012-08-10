@@ -86,6 +86,8 @@ case cmd
     dbm.dump_deps
     dbm.load_db
     dbm.load_deps
+    dbm.get_view_defs
+    dbm.refresh_views
     dbm.copy_views
     dbm.purge_dumps unless dry_run
 
