@@ -74,6 +74,22 @@ module ASEE
       con.close unless @dry_run
     end
 
+    def copy_views
+      views_hash = get_view_defs
+      con = Mysql.connect(@tgt_cnf[:host], @tgt_cnf[:username], @tgt_cnf[:password], @tgt_cnf[:database]) unless @dry_run
+      views_hash.each_pair do |view_name, view_def|
+        myputs "Copying #{view_name}"
+        copy_view_def = "CREATE TABLE tmp_#{view_name} SELECT * FROM #{view_name}"
+        con.query(copy_view_def) unless @dry_run
+        drop_view_def = "DROP VIEW #{view_name}"
+        con.query(drop_view_def) unless @dry_run
+        rename_table = "RENAME TABLE tmp_#{view_name} TO #{view_name}"
+        con.query(rename_table) unless @dry_run
+        myputs "Copied #{fixed_view_def}" if @debug > 5
+      end
+      con.close unless @dry_run
+    end
+
     # Fixes a "create view" statement to the right format for the destination db.
     def fix_view_def(view_name, view_def)
       fixed_view_def = view_def.gsub(/\A.* AS select /, "create or replace view #{view_name} as select ")

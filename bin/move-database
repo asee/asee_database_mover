@@ -80,6 +80,15 @@ case cmd
   when "refresh"
     dbm.refresh_views
 
+  when "snapshot"
+    views_hash = dbm.get_view_defs
+    dbm.dump_db(views_hash)
+    dbm.dump_deps
+    dbm.load_db
+    dbm.load_deps
+    dbm.copy_views
+    dbm.purge_dumps unless dry_run
+
   when "mirror"
     views_hash = dbm.get_view_defs
     dbm.dump_db(views_hash)
