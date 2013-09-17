@@ -94,11 +94,14 @@ module ASEE
     def fix_view_def(view_name, view_def)
       fixed_view_def = view_def.gsub(/\A.* AS select /, "create or replace view #{view_name} as select ")
       if @src_deps.count == @tgt_deps.count
-        @src_deps.each_index do |idx|
-          from = @src_deps[idx] #"#{name}_#{@src.gsub('1','')}"
-          to   = @tgt_deps[idx] #"#{name}_#{@tgt.gsub('1','')}"
+        src_view_cands = @src_deps.dup + [@src]
+        tgt_view_cands = @tgt_deps.dup + [@tgt]
+        src_view_cands.each_index do |idx|
+          from = src_view_cands[idx] #"#{name}_#{@src.gsub('1','')}"
+          to   = tgt_view_cands[idx] #"#{name}_#{@tgt.gsub('1','')}"
           fixed_view_def = fixed_view_def.gsub(from, to)
         end
+
         fixed_view_def
       else
         puts "Source and target dependent databases must be equal in quantity."
