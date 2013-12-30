@@ -28,82 +28,78 @@ EOS
   stop_on SUB_COMMANDS
 end
 
-dry_run = global_opts[:dry_run] 
-cmd = ARGV.shift
-dot = File.expand_path("~/.asee_dbs.yml")
-skl = File.join(File.dirname(File.dirname(__FILE__)), 'config', 'asee_dbs.example.yml')
+dry_run = global_opts[:dry_run]
 
-if File.exists?(dot)
-  cnf = YAML.load(File.open(dot))
-  src = ENV.has_key?('RUN_SRC') ? ENV['RUN_SRC'] : cnf['defaults']['env']['src']
-  tgt = ENV.has_key?('RUN_TGT') ? ENV['RUN_TGT'] : cnf['defaults']['env']['tgt']
+# pull command line arguments
+cmd     = ARGV.shift # command to be executed
+project = ARGV.shift # project on which to execute
+src_env = ARGV.shift # source env (can be defaulted in config)
+tgt_env = ARGV.shift # target env (can be defaulted in config)
+
+# load configuration file (with template just in case)
+config_path = File.join(File.dirname(File.dirname(__FILE__)), 'config', 'databases.yml')
+config_template = File.join(File.dirname(File.dirname(__FILE__)), 'config', 'databases.example.yml')
+
+# load in our configuration file
+if File.exists?(config_path)
+  config = YAML.load(File.open(config_path))
 end
+
 
 unless [nil, 'projects', 'init'].include?(cmd)
-  prj = ARGV.shift
-  dbm = ASEE::DatabaseMover.new(prj, cnf, src, tgt, dry_run)
+  # prepare variables for consumption by DatabaseMover class
+  src_env ||= config['defaults']['env']['src']
+  tgt_env ||= config['defaults']['env']['tgt']
+  src_conf  = config['environments'][src_env].merge(config[project][src_env])
+  tgt_conf  = config['environments'][tgt_env].merge(config[project][tgt_env])
+  env_conf  = config['defaults'].merge(config[project])
+
+  # create the database mover
+  dbm = DatabaseMover.new(src_conf, tgt_conf, env_conf, dry_run)
 end
+
 
 case cmd
   when "init"
-    unless File.exists?(dot)
-      `cp #{skl} #{dot}`
+    unless File.exists?(config_path)
+      `cp #{config_template} #{config_path}`
     else
-      puts "#{dot} exists. Manually remove it before initializing."
+      puts "#{config_path} exists. Manually remove it before initializing."
     end
 
   when "projects"
-    puts cnf['projects']
-
-  when "show"
-    dbm.show_configuration
-
+    puts config['projects']
 
   when "views"
     dbm.get_view_defs
 
   when "dump"
-    views_hash = dbm.get_view_defs
-    puts dbm.dump_db(views_hash)
-
-  when "fix"
-    dbm.fix_view_def
-
-  when "deps"
-    dbm.dump_deps
+    dbm.dump_dbs
 
   when "load"
-    dbm.load_db
-    dbm.load_deps
-    dbm.refresh_views
+    dbm.load_dbs
+    dbm.create_views
 
-  when "refresh"
-    dbm.get_view_defs
-    dbm.refresh_views
+  when "refresh_views"
+    dbm.create_views
 
   when "snapshot_views"
-    dbm.get_view_defs
-    dbm.copy_views
+    dbm.snapshot_views
 
   when "full_snapshot"
-    views_hash = dbm.get_view_defs
-    dbm.dump_db(views_hash)
-    dbm.dump_deps
-    dbm.load_db
-    dbm.load_deps
-    dbm.get_view_defs
-    dbm.refresh_views
-    dbm.copy_views
+    dbm.dump_dbs
+    dbm.load_dbs
+    dbm.snapshot_views
     dbm.purge_dumps unless dry_run
 
   when "mirror"
-    views_hash = dbm.get_view_defs
-    dbm.dump_db(views_hash)
-    dbm.dump_deps
-    dbm.load_db
-    dbm.load_deps
-    dbm.get_view_defs
-    dbm.refresh_views
-    dbm.purge_dumps unless dry_run
+    dbm.dump_dbs
+    dbm.load_dbs
+    dbm.create_views
+    dbm.purge_dumps
+
+  when 'purge_dumps'
+    dbm.purge_dumps
+
 
 end

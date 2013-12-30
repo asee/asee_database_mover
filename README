@@ -2,7 +2,23 @@
 
 ### Functionality
 
-This will essentially mirror a set of interrelated databases from one environment (staging) to another (development), respecting views and their various table references.
+Database Mover copies databases from one location to another.  It's main feature is that it respects MySQL views during transfer, but it can also make snapshots of views as tables.
 
+### Usage
 
+bin/move-database [command] [project]
 
+Commands:
+- init: creates a new databases.yml file for setup
+- projects: lists available projects
+- views: displays a list of views
+- dump: dumps contents of source database into local dump file
+- load: loads contents of dump files into target database
+- refresh_views: (re)creates views on on target databases
+- snapshot_views: dumps view contents into target databases
+- mirror: dumps, loads, refreshes views, and purges dumps
+- full_snapshot: dumps, loads, snapshots views, and purges dumps
+
+### Bugs
+
+This software is pretty bare bones and could be improved. Please leave a report if you find any bugs on github.
